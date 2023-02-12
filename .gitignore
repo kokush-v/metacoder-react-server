@@ -2,6 +2,6 @@
 
 # dependencies
 node_modules
-.req.rest
+.req
 .env
 clientIP
