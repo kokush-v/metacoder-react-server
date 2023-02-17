@@ -14,13 +14,14 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING(1000),
             allowNull: false,
          },
-         user_id: {
+         uid: {
             type: DataTypes.INTEGER,
          },
          time: DataTypes.STRING(64),
          date: {
             type: DataTypes.STRING(32),
          },
+         name: { type: DataTypes.STRING(1000), allowNull: false },
       },
       { timestamps: false, tableName: 'metacoderschat' }
    );

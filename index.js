@@ -4,11 +4,20 @@ if (process.env.NODE_ENV !== 'production') {
 
 const passport = require('passport');
 const express = require('express');
+const app = express();
 const session = require('express-session');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const app = express();
 const crypto = require('crypto');
+const server = require('http').Server(app);
+const io = require('socket.io')(server, {
+   cors: {
+      origin: 'http://localhost:3000',
+      methods: ['GET', 'POST'],
+      allowedHeaders: ['my-custom-header'],
+      credentials: true,
+   },
+});
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -49,6 +58,7 @@ initPassport(
 const axios = require('axios');
 const ipCheck = require('./clientIP/ipcheck');
 
+const { GetAllMessages, CreateMessage, GetUsers } = require('./chat');
 const { reg } = require('./db/db_reg');
 const { data_b, chat } = require('./db/sequelize');
 
@@ -97,6 +107,54 @@ app.post('/login', (req, res, next) => {
    })(req, res, next);
 });
 
-app.listen(5000, () => {
+app.get('/getusers', async (req, res) => {
+   var result = await GetUsers();
+
+   res.send(result);
+});
+
+const online = [];
+
+io.on('connection', async (socket) => {
+   var user;
+
+   var messages = await GetAllMessages();
+
+   console.log(`User connected ${socket.id}`);
+
+   await socket.on('join', (data) => {
+      user = data;
+
+      if (!online.find((e) => e == user.id)) online.push(user.id);
+
+      socket.join('chat');
+
+      io.to('chat').emit('conn_user', { user, online, messages });
+   });
+
+   await socket.on('send_message', (data) => {
+      var hours = new Date().getHours();
+      var min = new Date().getMinutes();
+
+      const dateText = `${hours.toString().length < 2 ? '0' + hours : hours}:${
+         min.toString().length < 2 ? '0' + min : min
+      }`;
+
+      console.log(data);
+
+      io.to('chat').emit('load_message', { data, date: dateText });
+
+      CreateMessage(data.message, data.user.id, dateText, data.user.name);
+   });
+
+   await socket.on('disconnect', () => {
+      console.log('disconnect ' + socket.id);
+      if (Boolean(user)) online.splice(online.indexOf(user.id), 1);
+      console.log(online);
+      io.to('chat').emit('log_out', { user, online });
+   });
+});
+
+server.listen(5000, () => {
    console.log('Server run on port 5000');
 });
