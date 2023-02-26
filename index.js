@@ -77,6 +77,8 @@ app.get('/getip', (req, res) => {
       });
 });
 
+app.get('/', (req, res) => {});
+
 app.post('/signup', async (req, res) => {
    // console.log(req.body);
 
@@ -120,7 +122,7 @@ io.on('connection', async (socket) => {
 
    var messages = await GetAllMessages();
 
-   console.log(`User connected ${socket.id}`);
+   // console.log(`User connected ${socket.id}`);
 
    await socket.on('join', (data) => {
       user = data;
@@ -140,17 +142,15 @@ io.on('connection', async (socket) => {
          min.toString().length < 2 ? '0' + min : min
       }`;
 
-      console.log(data);
-
       io.to('chat').emit('load_message', { data, date: dateText });
 
       CreateMessage(data.message, data.user.id, dateText, data.user.name);
    });
 
    await socket.on('disconnect', () => {
-      console.log('disconnect ' + socket.id);
+      // console.log('disconnect ' + socket.id);
       if (Boolean(user)) online.splice(online.indexOf(user.id), 1);
-      console.log(online);
+
       io.to('chat').emit('log_out', { user, online });
    });
 });

@@ -5,8 +5,6 @@ async function GetAllMessages() {
 
    result = await chat.findAll();
 
-   console.log(result);
-
    return result;
 }
 
